@@ -1,0 +1,181 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Dereferenceable</title>
+    
+    <meta name="author" content="Lucas AllanJerry DAntonio">
+
+    <!-- Enable responsive viewport -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le styles -->
+    <link href="/assets/themes/twitter/bootstrap/css/bootstrap.2.2.2.min.css" rel="stylesheet">
+    <link href="/assets/themes/twitter/css/style.css?body=1" rel="stylesheet" type="text/css" media="all">
+
+    <!-- Le fav and touch icons -->
+  <!-- Update these with your own images
+    <link rel="shortcut icon" href="images/favicon.ico">
+    <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="images/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="images/apple-touch-icon-114x114.png">
+  -->
+
+    <!-- atom & rss feed -->
+    <link href="" type="application/atom+xml" rel="alternate" title="Sitewide ATOM Feed">
+    <link href="" type="application/rss+xml" rel="alternate" title="Sitewide RSS Feed">
+
+  </head>
+
+  <body>
+    <div class="navbar">
+      <div class="navbar-inner">
+        <div class="container-narrow">
+          <a class="brand" href="/">Concurrent-ruby</a>
+          <ul class="nav">
+            
+            
+            
+
+
+  
+    
+      
+      	
+      	<li><a href="/about/index.html">About</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/documentation/index.html">Documentation</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+
+
+
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="container-narrow">
+
+      <div class="content">
+        
+<div class="page-header">
+  <h1>Dereferenceable </h1>
+</div>
+
+<div class="row-fluid">
+  <div class="span12">
+    <h1 id="dereferenceable">Dereferenceable</h1>
+
+<p>Object references in Ruby are mutable. This can lead to serious problems when the <code>#value</code> of a concurrent object is a mutable reference. Which is always the case unless the value is a <code>Fixnum</code>, <code>Symbol</code>, or similar “primitive” data type. Most classes in this library that expose a <code>#value</code> getter method do so using the <code>Dereferenceable</code> mixin module.</p>
+
+<p>Objects with this mixin can be configured with a few options that can help protect the program from potentially dangerous operations.</p>
+
+<ul>
+<li><code>:dup_on_deref</code> when true will call the <code>#dup</code> method on the <code>value</code> object every time the <code>#value</code> method is called (default: false)</li>
+
+<li><code>:freeze_on_deref</code> when true will call the <code>#freeze</code> method on the <code>value</code> object every time the <code>#value</code> method is called (default: false)</li>
+
+<li><code>:copy_on_deref</code> when given a <code>Proc</code> object the <code>Proc</code> will be run every time the <code>#value</code> method is called. The <code>Proc</code> will be given the current <code>value</code> as its only parameter and the result returned by the block will be the return value of the <code>#value</code> call. When <code>nil</code> this option will be ignored (default: nil)</li>
+</ul>
+
+<h2 id="copyright">Copyright</h2>
+
+<p><em>Concurrent Ruby</em> is Copyright © 2013 <a href="https://twitter.com/jerrydantonio">Jerry D’Antonio</a>. It is free software and may be redistributed under the terms specified in the LICENSE file.</p>
+
+<h2 id="license">License</h2>
+
+<p>Released under the MIT license.</p>
+
+<p>http://www.opensource.org/licenses/mit-license.php</p>
+
+<blockquote>
+<p>Permission is hereby granted, free of charge, to any person obtaining a copy<br />of this software and associated documentation files (the “Software”), to deal<br />in the Software without restriction, including without limitation the rights<br />to use, copy, modify, merge, publish, distribute, sublicense, and/or sell<br />copies of the Software, and to permit persons to whom the Software is<br />furnished to do so, subject to the following conditions:</p>
+
+<p>The above copyright notice and this permission notice shall be included in<br />all copies or substantial portions of the Software.</p>
+
+<p>THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR<br />IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,<br />FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE<br />AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER<br />LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,<br />OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN<br />THE SOFTWARE.</p>
+</blockquote>
+  </div>
+</div>
+
+
+      </div>
+      <hr>
+      <footer>
+      </footer>
+
+    </div>
+
+    
+  </body>
+</html>
+

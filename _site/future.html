@@ -1,0 +1,244 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Future</title>
+    
+    <meta name="author" content="Lucas AllanJerry DAntonio">
+
+    <!-- Enable responsive viewport -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le styles -->
+    <link href="/assets/themes/twitter/bootstrap/css/bootstrap.2.2.2.min.css" rel="stylesheet">
+    <link href="/assets/themes/twitter/css/style.css?body=1" rel="stylesheet" type="text/css" media="all">
+
+    <!-- Le fav and touch icons -->
+  <!-- Update these with your own images
+    <link rel="shortcut icon" href="images/favicon.ico">
+    <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="images/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="images/apple-touch-icon-114x114.png">
+  -->
+
+    <!-- atom & rss feed -->
+    <link href="" type="application/atom+xml" rel="alternate" title="Sitewide ATOM Feed">
+    <link href="" type="application/rss+xml" rel="alternate" title="Sitewide RSS Feed">
+
+  </head>
+
+  <body>
+    <div class="navbar">
+      <div class="navbar-inner">
+        <div class="container-narrow">
+          <a class="brand" href="/">Concurrent-ruby</a>
+          <ul class="nav">
+            
+            
+            
+
+
+  
+    
+      
+      	
+      	<li><a href="/about/index.html">About</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/documentation/index.html">Documentation</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+
+
+
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="container-narrow">
+
+      <div class="content">
+        
+<div class="page-header">
+  <h1>Future </h1>
+</div>
+
+<div class="row-fluid">
+  <div class="span12">
+    <h1 id="were_sending_you_back_to_the_future">We’re Sending You Back to the Future!</h1>
+
+<p><code>Future</code>s are inspired by <a href="http://clojure.org/">Clojure’s</a> <a href="http://clojuredocs.org/clojure_core/clojure.core/future">future</a> function. A future represents a promise to complete an action at some time in the future. The action is atomic and permanent. The idea behind a future is to send an operation for asynchronous completion, do other stuff, then return and retrieve the result of the async operation at a later time. <code>Future</code>s run on the global thread pool (see below).</p>
+
+<p><code>Future</code>s have three possible states: <em>pending</em>, <em>rejected</em>, and <em>fulfilled</em>. When a <code>Future</code> is created it is set to <em>pending</em> and will remain in that state until processing is complete. A completed <code>Future</code> is either <em>rejected</em>, indicating that an exception was thrown during processing, or <em>fulfilled</em>, indicating succedd. If a <code>Future</code> is <em>fulfilled</em> its <code>value</code> will be updated to reflect the result of the operation. If <em>rejected</em> the <code>reason</code> will be updated with a reference to the thrown exception. The predicate methods <code>pending?</code>, <code>rejected</code>, and <code>fulfilled?</code> can be called at any time to obtain the state of the <code>Future</code>, as can the <code>state</code> method, which returns a symbol.</p>
+
+<p>Retrieving the value of a <code>Future</code> is done through the <code>value</code> (alias: <code>deref</code>) method. Obtaining the value of a <code>Future</code> is a potentially blocking operation. When a <code>Future</code> is <em>rejected</em> a call to <code>value</code> will return <code>nil</code> immediately. When a <code>Future</code> is <em>fulfilled</em> a call to <code>value</code> will immediately return the current value. When a <code>Future</code> is <em>pending</em> a call to <code>value</code> will block until the <code>Future</code> is either <em>rejected</em> or <em>fulfilled</em>. A <em>timeout</em> value can be passed to <code>value</code> to limit how long the call will block. If <code>nil</code> the call will block indefinitely. If <code>0</code> the call will not block. Any other integer or float value will indicate the maximum number of seconds to block.</p>
+
+<p>The <code>Future</code> class also includes the Ruby standard library <a href="http://ruby-doc.org/stdlib-2.0/libdoc/observer/rdoc/Observable.html">Observable</a> module. On fulfillment or rejection all observers will be notified according to the normal <code>Observable</code> behavior. The observer callback function will be called with three parameters: the <code>Time</code> of fulfillment/rejection, the final <code>value</code>, and the final <code>reason</code>. Observers added after fulfillment/rejection will still be notified as normal. The notification will occur on the global thread pool.</p>
+
+<h2 id="examples">Examples</h2>
+
+<p>A fulfilled example:</p>
+
+<pre class="ruby"><code class="ruby">
+require 'concurrent'
+
+count = Concurrent::Future.new{ sleep(10); 10 }
+count.state #=&gt; :pending
+count.pending? #=&gt; true
+
+# do stuff...
+
+count.value(0) #=&gt; nil (does not block)
+
+count.value #=&gt; 10 (after blocking)
+count.state #=&gt; :fulfilled
+count.fulfilled? #=&gt; true
+count.value #=&gt; 10
+</code></pre>
+
+<p>A rejected example:</p>
+
+<pre class="ruby"><code class="ruby">
+count = Concurrent::Future.new{ sleep(10); raise StandardError.new(&quot;Boom!&quot;) }
+count.state #=&gt; :pending
+count.pending? #=&gt; true
+
+deref(count) #=&gt; nil (after blocking)
+count.rejected? #=&gt; true
+count.reason #=&gt; #&lt;StandardError: Boom!&gt; 
+</code></pre>
+
+<p>An example with observation:</p>
+
+<pre class="ruby"><code class="ruby">
+class Ticker
+  Stock = Struct.new(:symbol, :name, :exchange)
+
+  def update(time, value, reason)
+    ticker = value.collect do |symbol|
+      Stock.new(symbol['symbol'], symbol['name'], symbol['exch'])
+    end
+
+    output = ticker.join(&quot;\n&quot;)
+    print &quot;#{output}\n&quot;
+  end
+end
+
+yahoo = Finance.new('YAHOO')
+future = Concurrent::Future.new { yahoo.update.suggested_symbols }
+future.add_observer(Ticker.new)
+
+# do important stuff...
+
+#&gt;&gt; #&lt;struct Ticker::Stock symbol=&quot;YHOO&quot;, name=&quot;Yahoo! Inc.&quot;, exchange=&quot;NMS&quot;&gt;
+#&gt;&gt; #&lt;struct Ticker::Stock symbol=&quot;YHO.DE&quot;, name=&quot;Yahoo! Inc.&quot;, exchange=&quot;GER&quot;&gt;
+#&gt;&gt; #&lt;struct Ticker::Stock symbol=&quot;YAHOY&quot;, name=&quot;Yahoo Japan Corporation&quot;, exchange=&quot;PNK&quot;&gt;
+#&gt;&gt; #&lt;struct Ticker::Stock symbol=&quot;YAHOF&quot;, name=&quot;YAHOO JAPAN CORP&quot;, exchange=&quot;PNK&quot;&gt;
+#&gt;&gt; #&lt;struct Ticker::Stock symbol=&quot;YOJ.SG&quot;, name=&quot;YAHOO JAPAN&quot;, exchange=&quot;STU&quot;&gt;
+#&gt;&gt; #&lt;struct Ticker::Stock symbol=&quot;YHO.SG&quot;, name=&quot;YAHOO&quot;, exchange=&quot;STU&quot;&gt;
+#&gt;&gt; #&lt;struct Ticker::Stock symbol=&quot;YHOO.BA&quot;, name=&quot;Yahoo! Inc.&quot;, exchange=&quot;BUE&quot;&gt;
+#&gt;&gt; #&lt;struct Ticker::Stock symbol=&quot;YHO.DU&quot;, name=&quot;YAHOO&quot;, exchange=&quot;DUS&quot;&gt;
+#&gt;&gt; #&lt;struct Ticker::Stock symbol=&quot;YHO.HM&quot;, name=&quot;YAHOO&quot;, exchange=&quot;HAM&quot;&gt;
+#&gt;&gt; #&lt;struct Ticker::Stock symbol=&quot;YHO.BE&quot;, name=&quot;YAHOO&quot;, exchange=&quot;BER&quot;&gt;
+</code></pre>
+
+<h2 id="copyright">Copyright</h2>
+
+<p><em>Concurrent Ruby</em> is Copyright © 2013 <a href="https://twitter.com/jerrydantonio">Jerry D’Antonio</a>. It is free software and may be redistributed under the terms specified in the LICENSE file.</p>
+
+<h2 id="license">License</h2>
+
+<p>Released under the MIT license.</p>
+
+<p>http://www.opensource.org/licenses/mit-license.php</p>
+
+<blockquote>
+<p>Permission is hereby granted, free of charge, to any person obtaining a copy<br />of this software and associated documentation files (the “Software”), to deal<br />in the Software without restriction, including without limitation the rights<br />to use, copy, modify, merge, publish, distribute, sublicense, and/or sell<br />copies of the Software, and to permit persons to whom the Software is<br />furnished to do so, subject to the following conditions:</p>
+
+<p>The above copyright notice and this permission notice shall be included in<br />all copies or substantial portions of the Software.</p>
+
+<p>THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR<br />IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,<br />FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE<br />AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER<br />LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,<br />OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN<br />THE SOFTWARE.</p>
+</blockquote>
+  </div>
+</div>
+
+
+      </div>
+      <hr>
+      <footer>
+      </footer>
+
+    </div>
+
+    
+  </body>
+</html>
+

@@ -1,0 +1,460 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Actor-based concurrency</title>
+    
+    <meta name="author" content="Lucas AllanJerry DAntonio">
+
+    <!-- Enable responsive viewport -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le styles -->
+    <link href="/assets/themes/twitter/bootstrap/css/bootstrap.2.2.2.min.css" rel="stylesheet">
+    <link href="/assets/themes/twitter/css/style.css?body=1" rel="stylesheet" type="text/css" media="all">
+
+    <!-- Le fav and touch icons -->
+  <!-- Update these with your own images
+    <link rel="shortcut icon" href="images/favicon.ico">
+    <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="images/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="images/apple-touch-icon-114x114.png">
+  -->
+
+    <!-- atom & rss feed -->
+    <link href="" type="application/atom+xml" rel="alternate" title="Sitewide ATOM Feed">
+    <link href="" type="application/rss+xml" rel="alternate" title="Sitewide RSS Feed">
+
+  </head>
+
+  <body>
+    <div class="navbar">
+      <div class="navbar-inner">
+        <div class="container-narrow">
+          <a class="brand" href="/">Concurrent-ruby</a>
+          <ul class="nav">
+            
+            
+            
+
+
+  
+    
+      
+      	
+      	<li><a href="/about/index.html">About</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/documentation/index.html">Documentation</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+
+
+
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="container-narrow">
+
+      <div class="content">
+        
+<div class="page-header">
+  <h1>Actor-based concurrency </h1>
+</div>
+
+<div class="row-fluid">
+  <div class="span12">
+    <h1 id="all_the_worlds_a_stage">All the world’s a stage</h1>
+
+<p>Actor-based concurrency is all the rage in some circles. Originally described in 1973, the actor model is a paradigm for creating asynchronous, concurrent objects that is becoming increasingly popular. Much has changed since actors were first written about four decades ago, which has led to a serious fragmentation within the actor community. There is <em>no</em> universally accepted, strict definition of “actor” and actor implementations differ widely between languages and libraries.</p>
+
+<p>A good definition of “actor” is:</p>
+
+<blockquote>
+<p>An independent, concurrent, single-purpose, computational entity that communicates exclusively via message passing.</p>
+</blockquote>
+
+<p>The <code>Concurrent::Actor</code> class in this library is based solely on the <a href="http://www.scala-lang.org/api/current/index.html#scala.actors.Actor">Actor</a> task defined in the Scala standard library. It does not implement all the features of Scala’s <code>Actor</code> but its behavior for what <em>has</em> been implemented is nearly identical. The excluded features mostly deal with Scala’s message semantics, strong typing, and other characteristics of Scala that don’t really apply to Ruby.</p>
+
+<p>Unlike most of the abstractions in this library, <code>Actor</code> takes an <em>object-oriented</em> approach to asynchronous concurrency, rather than a <em>functional programming</em> approach.</p>
+
+<h2 id="definition">Definition</h2>
+
+<p>Actors are defined by subclassing the <code>Concurrent::Actor</code> class and overriding the <code>#act</code> method. The <code>#act</code> method can have any signature/arity but</p>
+
+<pre class="ruby"><code class="ruby">
+def act(*args)
+</code></pre>
+
+<p>is the most flexible and least error-prone signature. The <code>#act</code> method is called in response to a message being post to the <code>Actor</code> instance (see <em>Behavior</em> below).</p>
+
+<h2 id="behavior">Behavior</h2>
+
+<p>The <code>Concurrent::Actor</code> class includes the <code>Concurrent::Runnable</code> module. This provides an <code>Actor</code> instance with the necessary methods for running and graceful stopping. This also means that an <code>Actor</code> can be managed by a <code>Concurrent::Supervisor</code> for fault tolerance.</p>
+
+<h3 id="message_passing">Message Passing</h3>
+
+<p>Messages from any thread can be sent (aka “post”) to an <code>Actor</code> using several methods. When a message is post all arguments are gathered together and queued for processing. Messages are processed in the order they are received, one at a time, on a dedicated thread. When a message is processed the subclass <code>#act</code> method is called and the return value (or raised exception) is handled by the superclass based on the rules of the method used to post the message.</p>
+
+<p>All message posting methods are compatible with observation (see below).</p>
+
+<p>Message processing within the <code>#act</code> method is not limited in any way, but care should be taken to behave in a thread-safe, concurrency-friendly manner. A common practice is for one <code>Actor</code> to send messages to another <code>Actor</code> though this is hardly the only approach.</p>
+
+<p>Messages post to an <code>Actor</code> that is not running will be rejected.</p>
+
+<h4 id="fire_and_forget">Fire and Forget</h4>
+
+<p>The primary method of posting a message to an <code>Actor</code> is the simple <code>#post</code> method. When this method is called the message is queued for processing. The method returns false if it cannot be queued (the <code>Actor</code> is not running) otherwise it returns the size of the queue (after queueing the new message). The caller thread has no way to know the result of the message processing. When the <code>#post</code> method is used the only way to act upon the result of the message processing is via observation (see below).</p>
+
+<h4 id="post_with_an_obligation">Post with an Obligation</h4>
+
+<p>A common theme in modern asynchronous concurrency is for operations to return a “future” (or “promise”). In this context a “future” is not an instance of the <code>Concurrent::Future</code> class, but it is an object with similar behavior. Within this library “future” behavior is genericized by the <code>Concurrent::Obligation</code> mixin module (shared by <code>Future</code>, <code>Promise</code>, and others).</p>
+
+<p>To post a message that returns a <code>Obligation</code> use the <code>#post?</code> method. If the message cannot be queued the method will return <code>nil</code>. Otherwise an object implementing <code>Obligation</code> will returned. The <code>Obligation</code> has the exteced states (<code>:pending</code>, <code>:fulfilled</code>, and <code>:rejected</code>), the expected state-named predicate methods, plus <code>#value</code> and <code>#reason</code>. These methods all behave identically to <code>Concurrent::Future</code>.</p>
+
+<h4 id="post_with_timeout">Post with Timeout</h4>
+
+<p>Threads posting messages to an <code>Actor</code> should generally not block. Blocking to wait for an <code>Actor</code> to process a specific message defeats the purpose of asynchronous concurrency. The <code>#post!</code> method is provided when the caller absolutely must block. The first argument to <code>#post!</code> is a number of seconds to block while waiting for the operation to complete. All subsequent arguments constitute the message and are queued for delivery to the <code>#act</code> method. If the queued operation completes within the timeout period the <code>#post!</code> method returns the result of the operation.</p>
+
+<p>Unlike most methods in this library, the <code>#post!</code> method does not suppress exceptions. Because the <code>#post!</code> method return value represents the result of message processing the return value cannot effectively communicate failure. Instead, exceptions are used. Calls to the <code>#post!</code> method should generally be wrapped in <code>rescue</code> guards. The following exceptions may be raised by the <code>#post!</code> method:</p>
+
+<ul>
+<li><code>Concurrent::Runnable::LifecycleError</code> will be raised if the message cannot be queued, such as when the <code>Actor</code> is not running.</li>
+
+<li><code>Concurrent::TimeoutError</code> will be raised if the message is not processed within the designated timeout period</li>
+
+<li>Any exception raised during message processing will be re-raised after all post-processing operations (such as observer callbacks) have completed</li>
+</ul>
+
+<p>When the <code>#post!</code> method results in a timeout the <code>Actor</code> will attempt to cancel message processing, but cancellation is not guaranteed. If message processing has not begun the cancellation will normally occur. If message processing is in-progress when <code>#post!</code> reaches timeout then processing will be allowed to complete. Code that uses the <code>#post!</code> method must therefore not assume that a timeout means that message processing did not occur.</p>
+
+<h4 id="implicit_forwardreply">Implicit Forward/Reply</h4>
+
+<p>A common idiom is for an <code>Actor</code> to send messages to another <code>Actor</code>. This creates a “data flow” style of design not dissimilar to Unix-style pipe commands. Less common, but still frequent, is for an <code>Actor</code> to send the result of message processing back to the <code>Actor</code> that sent the message. In Scala this is easy to do. The underlying message passing system implicitly communicates to the receiver the address of the sender. Therefore, Scala actors can easily reply to the sender. Ruby has no similar message passing subsystem to implicit knowledge of the sender is not possible. This <code>Actor</code> implementation provides a <code>#forward</code> method that encapsulates both aforementioned idioms. The first argument to the <code>#forward</code> method is a reference to another <code>Actor</code> to which the receiving <code>Actor</code> should forward the result of the processed messages. All subsequent arguments constitute the message and are queued for delivery to the <code>#act</code> method.</p>
+
+<p>Upon successful message processing the <code>Actor</code> superclass will automatically forward the result to the receiver provided when <code>#forward</code> was called. If an exception is raised no forwarding occurs.</p>
+
+<h3 id="error_handling">Error Handling</h3>
+
+<p>Because <code>Actor</code> mixes in the <code>Concurrent::Runnable</code> module subclasses have access to the <code>#on_error</code> method and can override it to implement custom error handling. The <code>Actor</code> base class does not use <code>#on_error</code> so as to avoid conflit with subclasses which override it. Generally speaking, <code>#on_error</code> should not be used. The <code>Actor</code> base class provides concictent, reliable, and robust error handling already, and error handling specifics are tied to the message posting method. Incorrect behavior in an <code>#on_error</code> override can lead to inconsistent <code>Actor</code> behavior that may lead to confusion and difficult debugging.</p>
+
+<h3 id="observation">Observation</h3>
+
+<p>The <code>Actor</code> superclass mixes in the Ruby standard library <a href="http://ruby-doc.org/stdlib-2.0/libdoc/observer/rdoc/Observable.html">Observable</a> module to provide consistent callbacks upon message processing completion. The normal <code>Observable</code> methods, including <code>#add_observer</code> behave normally. Once an observer is added to an <code>Actor</code> it will be notified of all messages processed <em>after</em> addition. Notification will <em>not</em> occur for any messages that have already been processed.</p>
+
+<p>Observers will be notified regardless of whether the message processing is successful or not. The <code>#update</code> method of the observer will receive four arguments. The appropriate method signature is:</p>
+
+<pre class="ruby"><code class="ruby">
+def update(time, message, result, reason)
+</code></pre>
+
+<p>These four arguments represent:</p>
+
+<ul>
+<li>The time that message processing was completed</li>
+
+<li>An array containing all elements of the original message, in order</li>
+
+<li>The result of the call to <code>#act</code> (will be <code>nil</code> if an exception was raised)</li>
+
+<li>Any exception raised by <code>#act</code> (or <code>nil</code> if message processing was successful)</li>
+</ul>
+
+<h3 id="actor_pools">Actor Pools</h3>
+
+<p>Every <code>Actor</code> instance operates on its own thread. When one thread isn’t enough capacity to manage all the messages being sent to an <code>Actor</code> a <em>pool</em> can be used instead. A pool is a collection of <code>Actor</code> instances, all of the same type, that shate a message queue. Messages from other threads are all sent to a single queue against which all <code>Actor</code>s load balance.</p>
+
+<h2 id="additional_reading">Additional Reading</h2>
+
+<ul>
+<li><a href="http://www.scala-lang.org/api/current/index.html#scala.actors.Actor">API documentation</a> for the original (now deprecated) Scala Actor</li>
+
+<li><a href="http://www.scala-lang.org/old/node/242">Scala Actors: A Short Tutorial</a></li>
+
+<li><a href="http://java.dzone.com/articles/scala-threadless-concurrent">Scala Actors 101</a></li>
+</ul>
+
+<h2 id="examples">Examples</h2>
+
+<p>Two <code>Actor</code>s playing a back and forth game of Ping Pong, adapted from the Scala example <a href="http://www.scala-lang.org/old/node/242">here</a>:</p>
+
+<pre class="ruby"><code class="ruby">
+class Ping &lt; Concurrent::Actor
+
+  def initialize(count, pong)
+    super()
+    @pong = pong
+    @remaining = count
+  end
+  
+  def act(msg)
+
+    if msg == :pong
+      print &quot;Ping: pong\n&quot; if @remaining % 1000 == 0
+      @pong.post(:ping)
+
+      if @remaining &gt; 0
+        @pong &lt;&lt; :ping
+        @remaining -= 1
+      else
+        print &quot;Ping :stop\n&quot;
+        @pong &lt;&lt; :stop
+        self.stop
+      end
+    end
+  end
+end
+
+class Pong &lt; Concurrent::Actor
+
+  attr_writer :ping
+
+  def initialize
+    super()
+    @count = 0
+  end
+
+  def act(msg)
+
+    if msg == :ping
+      print &quot;Pong: ping\n&quot; if @count % 1000 == 0
+      @ping &lt;&lt; :pong
+      @count += 1
+
+    elsif msg == :stop
+      print &quot;Pong :stop\n&quot;
+      self.stop
+    end
+  end
+end
+
+pong = Pong.new
+ping = Ping.new(10000, pong)
+pong.ping = ping
+
+t1 = ping.run!
+t2 = pong.run!
+sleep(0.1)
+
+ping &lt;&lt; :pong
+</code></pre>
+
+<p>A pool of <code>Actor</code>s and a <code>Supervisor</code></p>
+
+<pre class="ruby"><code class="ruby">
+QUERIES = %w[YAHOO Microsoft google]
+
+class FinanceActor &lt; Concurrent::Actor
+  def act(query)
+    finance = Finance.new(query)
+    print &quot;[#{Time.now}] RECEIVED '#{query}' to #{self} returned #{finance.update.suggested_symbols}\n\n&quot;
+  end
+end
+
+financial, pool = FinanceActor.pool(5)
+
+overlord = Concurrent::Supervisor.new
+pool.each{|actor| overlord.add_worker(actor)}
+
+overlord.run! 
+
+financial.post('YAHOO')
+
+#&gt;&gt; [2013-10-18 09:35:28 -0400] SENT 'YAHOO' from main to worker pool
+#&gt;&gt; [2013-10-18 09:35:28 -0400] RECEIVED 'YAHOO' to #&lt;FinanceActor:0x0000010331af70&gt;...
+</code></pre>
+
+<p>The <code>#post</code> method simply sends a message to an actor and returns. It’s a fire-and-forget interaction.</p>
+
+<pre class="ruby"><code class="ruby">
+class EchoActor &lt; Concurrent::Actor
+  def act(*message)
+    p message
+  end
+end
+
+echo = EchoActor.new
+echo.run!
+
+echo.post(&quot;Don't panic&quot;) #=&gt; true
+#=&gt; [&quot;Don't panic&quot;]
+
+echo.post(1, 2, 3, 4, 5) #=&gt; true
+#=&gt; [1, 2, 3, 4, 5]
+
+echo &lt;&lt; &quot;There's a frood who really knows where his towel is.&quot; #=&gt; #&lt;EchoActor:0x007fc8012b8448...
+#=&gt; [&quot;There's a frood who really knows where his towel is.&quot;]
+</code></pre>
+
+<p>The <code>#post?</code> method returns an <code>Obligation</code> (same API as <code>Future</code>) which can be queried for value/reason on fulfillment/rejection.</p>
+
+<pre class="ruby"><code class="ruby">
+class EverythingActor &lt; Concurrent::Actor
+  def act(message)
+    sleep(5)
+    return 42
+  end
+end
+
+life = EverythingActor.new
+life.run!
+sleep(0.1)
+
+universe = life.post?('What do you get when you multiply six by nine?')
+universe.pending? #=&gt; true
+
+# wait for it...
+
+universe.fulfilled? #=&gt; true
+universe.value      #=&gt; 42
+</code></pre>
+
+<p>The <code>#post!</code> method is a blocking call. It takes a number of seconds to wait as the first parameter and any number of additional parameters as the message. If the message is processed within the given number of seconds the call returns the result of the operation. If message processing raises an exception the exception is raised again by the <code>#post!</code> method. If the call to <code>#post!</code> times out a <code>Concurrent::Timeout</code> exception is raised.</p>
+
+<pre class="ruby"><code class="ruby">
+life = EverythingActor.new
+life.run!
+sleep(0.1)
+
+life.post!(1, 'Mostly harmless.')
+
+# wait for it...
+#=&gt; Concurrent::TimeoutError: Concurrent::TimeoutError
+</code></pre>
+
+<p>And, of course, the <code>Actor</code> class mixes in Ruby’s <code>Observable</code>.</p>
+
+<pre class="ruby"><code class="ruby">
+class ActorObserver
+  def update(time, message, result, ex)
+    if result
+      print &quot;(#{time}) Message #{message} returned #{result}\n&quot;
+    elsif ex.is_a?(Concurrent::TimeoutError)
+      print &quot;(#{time}) Message #{message} timed out\n&quot;
+    else
+      print &quot;(#{time}) Message #{message} failed with error #{ex}\n&quot;
+    end
+  end
+end
+
+class SimpleActor &lt; Concurrent::Actor
+  def act(*message)
+    message
+  end
+end
+
+actor = SimpleActor.new
+actor.add_observer(ActorObserver.new)
+actor.run!
+
+actor.post(1)
+#=&gt; (2013-11-07 18:35:33 -0500) Message [1] returned [1]
+
+actor.post(1,2,3)
+#=&gt; (2013-11-07 18:35:54 -0500) Message [1, 2, 3] returned [1, 2, 3]
+
+actor.post('The Nightman Cometh')
+#=&gt; (2013-11-07 18:36:11 -0500) Message [&quot;The Nightman Cometh&quot;] returned [&quot;The Nightman Cometh&quot;]
+</code></pre>
+
+<h2 id="copyright">Copyright</h2>
+
+<p><em>Concurrent Ruby</em> is Copyright © 2013 <a href="https://twitter.com/jerrydantonio">Jerry D’Antonio</a>. It is free software and may be redistributed under the terms specified in the LICENSE file.</p>
+
+<h2 id="license">License</h2>
+
+<p>Released under the MIT license.</p>
+
+<p>http://www.opensource.org/licenses/mit-license.php</p>
+
+<blockquote>
+<p>Permission is hereby granted, free of charge, to any person obtaining a copy<br />of this software and associated documentation files (the “Software”), to deal<br />in the Software without restriction, including without limitation the rights<br />to use, copy, modify, merge, publish, distribute, sublicense, and/or sell<br />copies of the Software, and to permit persons to whom the Software is<br />furnished to do so, subject to the following conditions:</p>
+
+<p>The above copyright notice and this permission notice shall be included in<br />all copies or substantial portions of the Software.</p>
+
+<p>THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR<br />IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,<br />FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE<br />AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER<br />LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,<br />OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN<br />THE SOFTWARE.</p>
+</blockquote>
+  </div>
+</div>
+
+
+      </div>
+      <hr>
+      <footer>
+      </footer>
+
+    </div>
+
+    
+  </body>
+</html>
+

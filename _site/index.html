@@ -1,0 +1,287 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title></title>
+    
+    <meta name="author" content="Lucas AllanJerry DAntonio">
+
+    <!-- Enable responsive viewport -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le styles -->
+    <link href="/assets/themes/twitter/bootstrap/css/bootstrap.2.2.2.min.css" rel="stylesheet">
+    <link href="/assets/themes/twitter/css/style.css?body=1" rel="stylesheet" type="text/css" media="all">
+
+    <!-- Le fav and touch icons -->
+  <!-- Update these with your own images
+    <link rel="shortcut icon" href="images/favicon.ico">
+    <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="images/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="images/apple-touch-icon-114x114.png">
+  -->
+
+    <!-- atom & rss feed -->
+    <link href="" type="application/atom+xml" rel="alternate" title="Sitewide ATOM Feed">
+    <link href="" type="application/rss+xml" rel="alternate" title="Sitewide RSS Feed">
+
+  </head>
+
+  <body>
+    <div class="navbar">
+      <div class="navbar-inner">
+        <div class="container-narrow">
+          <a class="brand" href="/">Concurrent-ruby</a>
+          <ul class="nav">
+            
+            
+            
+
+
+  
+    
+      
+      	
+      	<li><a href="/about/index.html">About</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/documentation/index.html">Documentation</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+
+
+
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="container-narrow">
+
+      <div class="content">
+        <p>Modern concurrency tools for Ruby. Inspired by <a href="http://www.erlang.org/doc/reference_manual/processes.html">Erlang</a>, <a href="http://clojure.org/concurrent_programming">Clojure</a>, <a href="http://www.scala-lang.org/api/current/index.html#scala.actors.Actor">Scala</a>, <a href="http://www.haskell.org/haskellwiki/Applications_and_libraries/Concurrency_and_parallelism#Concurrent_Haskell">Haskell</a>, <a href="http://blogs.msdn.com/b/dsyme/archive/2010/02/15/async-and-parallel-design-patterns-in-f-part-3-agents.aspx">F#</a>, <a href="http://msdn.microsoft.com/en-us/library/vstudio/hh191443.aspx">C#</a>, <a href="http://docs.oracle.com/javase/7/docs/api/java/util/concurrent/package-summary.html">Java</a>, and classic concurrency patterns.</p>
+
+<p>The design goals of this gem are:</p>
+
+<ul>
+<li>Stay true to the spirit of the languages providing inspiration</li>
+
+<li>But implement in a way that makes sense for Ruby</li>
+
+<li>Keep the semantics as idiomatic Ruby as possible</li>
+
+<li>Support features that make sense in Ruby</li>
+
+<li>Exclude features that don’t make sense in Ruby</li>
+
+<li>Be small, lean, and loosely coupled</li>
+</ul>
+
+<h2 id="features__documentation">Features &amp; Documentation</h2>
+
+<ul>
+<li>
+<p>Clojure-inspired <a href="https://github.com/jdantonio/concurrent-ruby/blob/master/md/agent.md">Agent</a></p>
+</li>
+
+<li>
+<p>Clojure-inspired <a href="https://github.com/jdantonio/concurrent-ruby/blob/master/md/future.md">Future</a></p>
+</li>
+
+<li>
+<p>Scala-inspired <a href="https://github.com/jdantonio/concurrent-ruby/blob/master/md/actor.md">Actor</a></p>
+</li>
+
+<li>
+<p>JavaScript-inspired <a href="https://github.com/jdantonio/concurrent-ruby/blob/master/md/promise.md">Promise</a></p>
+</li>
+
+<li>
+<p>Java-inspired <a href="https://github.com/jdantonio/concurrent-ruby/blob/master/md/thread_pool.md">Thread Pools</a></p>
+</li>
+
+<li>
+<p>Old school <a href="http://msdn.microsoft.com/en-us/library/windows/desktop/ms682655.aspx">events</a> from back in my Visual C++ days</p>
+</li>
+
+<li>
+<p>Repeated task execution with Java-inspired <a href="https://github.com/jdantonio/concurrent-ruby/blob/master/md/timer_task.md">TimerTask</a> service</p>
+</li>
+
+<li>
+<p>Scheduled task execution with Java-inspired <a href="https://github.com/jdantonio/concurrent-ruby/blob/master/md/scheduled_task.md">ScheduledTask</a> service</p>
+</li>
+
+<li>
+<p>Erlang-inspired <a href="https://github.com/jdantonio/concurrent-ruby/blob/master/md/supervisor.md">Supervisor</a> for managing long-running threads</p>
+</li>
+
+<li>
+<p>Actor variant <a href="https://github.com/jdantonio/concurrent-ruby/blob/master/md/channel.md">Channel</a> loosely based on the <a href="http://blogs.msdn.com/b/dsyme/archive/2010/02/15/async-and-parallel-design-patterns-in-f-part-3-agents.aspx">MailboxProcessor</a> agent in <a href="http://msdn.microsoft.com/en-us/library/ee370357.aspx">F#</a></p>
+
+<h3 id="semantic_versioning">Semantic Versioning</h3>
+
+<p><em>Beginning with v0.4.0 this gem will strictly adhere to the rules of semantic versioning.</em></p>
+
+<h3 id="supported_ruby_versions">Supported Ruby versions</h3>
+
+<p>MRI 1.9.2, 1.9.3, 2.0, 2.1, and JRuby (1.9 mode). This library is pure Ruby and has no gem dependencies. It should be fully compatible with any Ruby interpreter that is 1.9.x compliant.</p>
+
+<h3 id="example">Example</h3>
+
+<p>Many more code examples can be found in the documentation for each class (linked above). This one simple example shows some of the power of this gem.</p>
+
+<pre class="ruby"><code class="ruby">
+require 'concurrent'
+require 'faker'
+
+class EchoActor &lt; Concurrent::Actor
+  def act(*message)
+    puts &quot;#{message} handled by #{self}&quot;
+  end
+end
+
+mailbox, pool = EchoActor.pool(5)
+
+timer_proc = proc do
+  mailbox.post(Faker::Company.bs)
+end
+
+t1 = Concurrent::TimerTask.new(execution_interval: rand(5)+1, &amp;timer_proc)
+t2 = Concurrent::TimerTask.new(execution_interval: rand(5)+1, &amp;timer_proc)
+
+overlord = Concurrent::Supervisor.new
+
+overlord.add_worker(t1)
+overlord.add_worker(t2)
+pool.each{|actor| overlord.add_worker(actor)}
+
+overlord.run!
+
+#=&gt; [&quot;mesh proactive platforms&quot;] handled by #&lt;EchoActor:0x007fa5ac18bdf8&gt;
+#=&gt; [&quot;maximize sticky portals&quot;] handled by #&lt;EchoActor:0x007fa5ac18bdd0&gt;
+#=&gt; [&quot;morph bleeding-edge markets&quot;] handled by #&lt;EchoActor:0x007fa5ac18bd80&gt;
+#=&gt; [&quot;engage clicks-and-mortar interfaces&quot;] handled by #&lt;EchoActor:0x007fa5ac18bd58&gt;
+#=&gt; [&quot;monetize transparent infrastructures&quot;] handled by #&lt;EchoActor:0x007fa5ac18bd30&gt;
+#=&gt; [&quot;morph sexy e-tailers&quot;] handled by #&lt;EchoActor:0x007fa5ac18bdf8&gt;
+#=&gt; [&quot;exploit dot-com models&quot;] handled by #&lt;EchoActor:0x007fa5ac18bdd0&gt;
+#=&gt; [&quot;incentivize virtual deliverables&quot;] handled by #&lt;EchoActor:0x007fa5ac18bd80&gt;
+#=&gt; [&quot;enhance B2B models&quot;] handled by #&lt;EchoActor:0x007fa5ac18bd58&gt;
+#=&gt; [&quot;envisioneer real-time architectures&quot;] handled by #&lt;EchoActor:0x007fa5ac18bd30&gt;
+
+overlord.stop
+</code></pre>
+
+<h3 id="disclaimer">Disclaimer</h3>
+
+<p>Remember, <em>there is no silver bullet in concurrent programming.</em> Concurrency is hard. These tools will help ease the burden, but at the end of the day it is essential that you <em>know what you are doing.</em></p>
+
+<ul>
+<li>Decouple business logic from concurrency logic</li>
+
+<li>Test business logic separate from concurrency logic</li>
+
+<li>Keep the intersection of business logic and concurrency and small as possible</li>
+
+<li>Don’t share mutable data unless absolutely necessary</li>
+
+<li>Protect shared data as much as possible (prefer <a href="https://github.com/harukizaemon/hamster">immutability</a>)</li>
+
+<li>Don’t mix Ruby’s <a href="http://ruby-doc.org/core-2.0.0/Thread.html">concurrency</a> <a href="http://www.ruby-doc.org/core-2.0.0/Mutex.html">primitives</a> with asynchronous concurrency libraries</li>
+</ul>
+
+<h3 id="conference_presentations">Conference Presentations</h3>
+
+<ul>
+<li><a href="http://rubyconf.org/program#jerry-dantonio">“Advanced Concurrent Programming in Ruby”</a> at <a href="http://rubyconf.org/">RubyConf 2013</a> used <a href="https://github.com/jdantonio/concurrent-ruby-presentation">this</a> version of the presentation and is available for viewing on <a href="http://www.confreaks.com/videos/2872-rubyconf2013-advanced-concurrent-programming-in-ruby">Confreaks</a></li>
+
+<li><a href="http://cascadiaruby.com/#advanced-multithreading-in-ruby">“Advanced Multithreading in Ruby”</a> at <a href="http://cascadiaruby.com/">Cascadia Ruby 2013</a> used <a href="https://github.com/jdantonio/concurrent-ruby-presentation/tree/cascadia-ruby-2013">this</a> version of the presentation and is available for viewing on <a href="http://www.confreaks.com/videos/2790-cascadiaruby2013-advanced-multithreading-in-ruby">Confreaks</a></li>
+
+<li><a href="http://www.meetup.com/ClevelandRuby/events/149981942/">Cleveland Ruby Brigade</a> meetup in December of 2013 used <a href="https://github.com/jdantonio/concurrent-ruby-presentation/releases/tag/clerb-dec-2013">this</a> version of the presentation</li>
+
+<li>I’ll be giving <a href="http://codemash.org/sessions">“Advanced Concurrent Programming in Ruby”</a> at <a href="http://codemash.org/">CodeMash 2014</a></li>
+</ul>
+
+<h2 id="license_and_copyright">License and Copyright</h2>
+
+<p><em>Concurrent Ruby</em> is Copyright © 2013 <a href="https://twitter.com/jerrydantonio">Jerry D’Antonio</a>. It is free software released under the <a href="http://www.opensource.org/licenses/MIT">MIT License</a>.</p>
+</li>
+</ul>
+      </div>
+      <hr>
+      <footer>
+      </footer>
+
+    </div>
+
+    
+  </body>
+</html>
+

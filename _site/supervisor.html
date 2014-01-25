@@ -1,0 +1,336 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Supervisor</title>
+    
+    <meta name="author" content="Lucas AllanJerry DAntonio">
+
+    <!-- Enable responsive viewport -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le styles -->
+    <link href="/assets/themes/twitter/bootstrap/css/bootstrap.2.2.2.min.css" rel="stylesheet">
+    <link href="/assets/themes/twitter/css/style.css?body=1" rel="stylesheet" type="text/css" media="all">
+
+    <!-- Le fav and touch icons -->
+  <!-- Update these with your own images
+    <link rel="shortcut icon" href="images/favicon.ico">
+    <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="images/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="images/apple-touch-icon-114x114.png">
+  -->
+
+    <!-- atom & rss feed -->
+    <link href="" type="application/atom+xml" rel="alternate" title="Sitewide ATOM Feed">
+    <link href="" type="application/rss+xml" rel="alternate" title="Sitewide RSS Feed">
+
+  </head>
+
+  <body>
+    <div class="navbar">
+      <div class="navbar-inner">
+        <div class="container-narrow">
+          <a class="brand" href="/">Concurrent-ruby</a>
+          <ul class="nav">
+            
+            
+            
+
+
+  
+    
+      
+      	
+      	<li><a href="/about/index.html">About</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/documentation/index.html">Documentation</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+
+
+
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="container-narrow">
+
+      <div class="content">
+        
+<div class="page-header">
+  <h1>Supervisor </h1>
+</div>
+
+<div class="row-fluid">
+  <div class="span12">
+    <h1 id="you_dont_need_to_get_no_supervisor_you_the_supervisor_today">You don’t need to get no supervisor! You the supervisor today!</h1>
+
+<p>One of Erlang’s claim to fame is its fault tolerance. Erlang systems have been known to exhibit near-mythical levels of uptime. One of the main reasons is the pervaisve design philosophy of “let it fail.” When errors occur most Erlang systems simply let the failing component fail completely. The system then restarts the failed component. This “let it fail” resilience isn’t an intrinsic capability of either the language or the virtual machine. It’s a deliberate design philosophy. One of the key enablers of this philosophy is the <a href="http://www.erlang.org/doc/man/supervisor.html">Supervisor</a> of the OTP (standard library).</p>
+
+<p>The Supervisor module answers the question “Who watches the watchmen?” A single Supervisor can manage any number of workers (children). The Supervisor assumes responsibility for starting the children, stopping them, and restarting them if they fail. Several classes in this library, including <code>Actor</code> and <code>TimerTask</code> are designed to work with <code>Supervisor</code>. Additionally, <code>Supervisor</code>s can supervise others <code>Supervisor</code>s (see <em>Supervision Trees</em> below).</p>
+
+<p>The <code>Concurrent::Supervisor</code> class is a faithful and nearly complete implementaion of Erlang’s Supervisor module.</p>
+
+<h2 id="basic_supervisor_behavior">Basic Supervisor Behavior</h2>
+
+<p>At the core a <code>Supervisor</code> instance is a very simple object. Simply create a <code>Supervisor</code>, add at least one worker using the <code>#add_worker</code> method, and start the <code>Supervisor</code> using either <code>#run</code> (blocking) or <code>#run!</code> (non-blocking). The <code>Supervisor</code> will spawn a new thread for each child and start the chid on its thread. The <code>Supervisor</code> will then continuously monitor all its child threads. If any of the children crash the <code>Supervisor</code> will restart them in accordance with its <em>restart strategy</em> (see below). Later, stop the <code>Supervisor</code> with its <code>#stop</code> method and it will gracefully stop all its children.</p>
+
+<p>A <code>Supervisor</code> will also track the number of times it must restart children withing a defined, sliding window of time. If the onfigured threshholds are exceeded (see <em>Intervals</em> below) then the <code>Supervisor</code> will assume there is a catastrophic failure (possibly within the <code>Supervisor</code> itself) and it will shut itself down. If the <code>Supervisor</code> is part of a <em>supervision tree</em> (see below) then its <code>Supervisor</code> will likely restart it.</p>
+
+<pre class="ruby"><code class="ruby">
+task = Concurrent::TimerTask.new{ print &quot;[#{Time.now}] Hello world!\n&quot; }
+
+supervisor = Concurrent::Supervisor.new
+supervisor.add_worker(task)
+
+supervisor.run! # the #run method blocks, #run! does not
+</code></pre>
+
+<h2 id="workers">Workers</h2>
+
+<p>Any object can be managed by a <code>Supervisor</code> so long as the class to be supervised supports the required API. A supervised object needs only support three methods:</p>
+
+<ul>
+<li><code>#run</code> is a blocking call that starts the child then blocks until the child is stopped</li>
+
+<li><code>#running?</code> is a predicate method indicating whether or not the child is running</li>
+
+<li><code>#stop</code> gracefully stops the child if it is running</li>
+</ul>
+
+<h3 id="runnable">Runnable</h3>
+
+<p>To facilitate the creation of supervisorable classes, the <code>Runnable</code> module is provided. Simple include <code>Runnable</code> in the class and the required API methods will be provided. <code>Runnable</code> also provides several lifecycle methods that may be overridden by the including class. At a minimum the <code>#on_task</code> method <em>must</em> be overridden. <code>Runnable</code> will provide an infinite loop that will start when either the <code>#run</code> or <code>#run!</code> method is called. The subclass <code>#on_task</code> method will be called once in every iteration. The overridden method should provide some sort of blocking behavior otherwise the run loop may monopolize the processor and spike the processor utilization.</p>
+
+<p>The following optional lifecycle methods are also provided:</p>
+
+<ul>
+<li><code>#on_run</code> is called once when the object is started via the <code>#run</code> or <code>#run!</code> method but before the <code>#on_task</code> method is first called</li>
+
+<li><code>#on_stop</code> is called once when the <code>#stop</code> method is called, after the last call to <code>#on_task</code></li>
+</ul>
+
+<pre class="ruby"><code class="ruby">
+class Echo
+  include Concurrent::Runnable
+
+  def initialize
+    @queue = Queue.new
+  end
+
+  def post(message)
+    @queue.push(message)
+  end
+
+  protected
+
+  def on_task
+    message = @queue.pop
+    print &quot;#{message}\n&quot;
+  end
+end
+
+echo = Echo.new
+supervisor = Concurrent::Supervisor.new
+supervisor.add_worker(echo)
+supervisor.run!
+</code></pre>
+
+<h2 id="supervisor_configuration">Supervisor Configuration</h2>
+
+<p>A newly-created <code>Supervisor</code> will be configured with a reasonable set of options that should suffice for most purposes. In many cases no additional configuration will be required. When more granular control is required a <code>Supervisor</code> may be given several configuration options during initialization. Additionally, a few per-worker configuration options may be passed during the call to <code>#add_worker</code>. Once a <code>Supervisor</code> is created and the workers are added no additional configuration is possible.</p>
+
+<h3 id="intervals">Intervals</h3>
+
+<p>A <code>Supervisor</code> monitors its children and conducts triage operations based on several configurable intervals:</p>
+
+<ul>
+<li><code>:monitor_interval</code> specifies the number of seconds between health checks of the workers. The higher the interval the longer a particular worker may be dead before being restarted. The default is 1 second.</li>
+
+<li><code>:max_restart</code> specifies the number of times (in total) the <code>Supevisor</code> may restart children before it assumes there is a catastrophic failure and it shuts itself down. The default is 5 restarts.</li>
+
+<li><code>:max_time</code> if the time interval over which <code>#max_restart</code> is tracked. Since <code>Supervisor</code> is intended to be used in applications that may run forever the <code>#max_restart</code> count must be timeboxed to prevent erroneous <code>Supervisor shutdown</code>. The default is 60 seconds.</li>
+</ul>
+
+<h3 id="restart_strategy">Restart Strategy</h3>
+
+<p>When a child thread dies the <code>Supervisor</code> will restart it, and possibly other children, with the expectation that the workers are capable of cleaning themselves up and running again. The <code>Supervisor</code> will call each targetted worker’s <code>#stop</code> method, kill the worker’s thread, spawn a new thread, and call the worker’s <code>#run</code> method.</p>
+
+<ul>
+<li><code>:one_for_one</code> When this restart strategy is set the <code>Supervisor</code> will only restart the worker thread that has died. It will not restart any of the other children. This is the default restart strategy.</li>
+
+<li><code>:one_for_all</code> When this restart strategy is set the <code>Supervisor</code> will restart all children when any one child dies. All workers will be stopped in the order they were originally added to the <code>Supervisor</code>. Once all childrean have been stopped they will all be started again in the same order.</li>
+
+<li><code>:rest_for_one</code> This restart strategy assumes that the order the workers were added to the <code>Supervisor</code> is meaningful. When one child dies all the downstream children (children added to the <code>Supervisor</code> after the dead worker) will be restarted. The <code>Supervisor</code> will begin by calling the <code>#stop</code> method on the dead worker and all downstream workers. The <code>Supervisor</code> will then iterate over all dead workers and restart each by creating a new thread then calling the worker’s <code>#run</code> method.</li>
+</ul>
+
+<p>When a restart is initiated under any strategy other than <code>:one_for_one</code> the <code>:max_restart</code> value will only be incremented by one, regardless of how many children are restarted.</p>
+
+<h3 id="worker_restart_option">Worker Restart Option</h3>
+
+<p>When a worker dies the default behavior of the <code>Supervisor</code> is to restart one or more workers according to the restart strategy defined when the <code>Supervisor</code> is created (see above). This behavior can be modified on a per-worker basis using the <code>:restart</code> option when calling <code>#add_worker</code>. Three worker <code>:restart</code> options are supported:</p>
+
+<ul>
+<li><code>:permanent</code> means the worker is intended to run forever and will always be restarted (this is the default)</li>
+
+<li><code>:temporary</code> workers are expected to stop on their own as a normal part of their operation and will only be restarted on an abnormal exit</li>
+
+<li><code>:transient</code> workers will never be restarted</li>
+</ul>
+
+<h3 id="worker_type">Worker Type</h3>
+
+<p>Every worker added to a <code>Supervisor</code> is of either type <code>:worker</code> or <code>:supervisor</code>. The defauly value is <code>:worker</code>. Currently this type makes no functional difference. It is purely informational.</p>
+
+<h2 id="supervision_trees">Supervision Trees</h2>
+
+<p>One of the most powerful aspects of Erlang’s supervisor module is its ability to supervise other supervisors. This allows for the creation of deep, robust <em>supervision trees</em>. Workers can be gouped under multiple bottom-level <code>Supervisor</code>s. Each of these <code>Supervisor</code>s can be configured according to the needs of its workers. These multiple <code>Supervisor</code>s can be added as children to another <code>Supervisor</code>. The root <code>Supervisor</code> can then start the entire tree via trickel-down (start its children which start their children and so on). The root <code>Supervisor</code> then monitor its child <code>Supervisor</code>s, and so on.</p>
+
+<p>Supervision trees are the main reason that a <code>Supervisor</code> will shut itself down if its <code>:max_restart</code>/<code>:max_time</code> threshhold is exceeded. An isolated <code>Supervisor</code> will simply shut down forever. A <code>Supervisor</code> that is part of a supervision tree will shut itself down and let its parent <code>Supervisor</code> manage the restart.</p>
+
+<h2 id="examples">Examples</h2>
+
+<pre class="ruby"><code class="ruby">
+QUERIES = %w[YAHOO Microsoft google]
+
+class FinanceActor &lt; Concurrent::Actor
+  def act(query)
+    finance = Finance.new(query)
+    print &quot;[#{Time.now}] RECEIVED '#{query}' to #{self} returned #{finance.update.suggested_symbols}\n\n&quot;
+  end
+end
+
+financial, pool = FinanceActor.pool(5)
+
+timer_proc = proc do
+  query = QUERIES[rand(QUERIES.length)]
+  financial.post(query)
+  print &quot;[#{Time.now}] SENT '#{query}' from #{self} to worker pool\n\n&quot;
+end
+
+t1 = Concurrent::TimerTask.new(execution_interval: rand(5)+1, &amp;timer_proc)
+t2 = Concurrent::TimerTask.new(execution_interval: rand(5)+1, &amp;timer_proc)
+
+overlord = Concurrent::Supervisor.new
+
+overlord.add_worker(t1)
+overlord.add_worker(t2)
+pool.each{|actor| overlord.add_worker(actor)}
+
+overlord.run!
+</code></pre>
+
+<h2 id="additional_reading">Additional Reading</h2>
+
+<ul>
+<li><a href="http://www.erlang.org/doc/man/supervisor.html">Supervisor Module</a></li>
+
+<li><a href="http://www.erlang.org/doc/design_principles/sup_princ.html">Supervisor Behaviour</a></li>
+
+<li><a href="http://learnyousomeerlang.com/supervisors">Who Supervises The Supervisors?</a></li>
+
+<li><a href="http://www.erlang.org/doc/design_principles/des_princ.html">OTP Design Principles</a></li>
+</ul>
+
+<h2 id="copyright">Copyright</h2>
+
+<p><em>Concurrent Ruby</em> is Copyright © 2013 <a href="https://twitter.com/jerrydantonio">Jerry D’Antonio</a>. It is free software and may be redistributed under the terms specified in the LICENSE file.</p>
+
+<h2 id="license">License</h2>
+
+<p>Released under the MIT license.</p>
+
+<p>http://www.opensource.org/licenses/mit-license.php</p>
+
+<blockquote>
+<p>Permission is hereby granted, free of charge, to any person obtaining a copy<br />of this software and associated documentation files (the “Software”), to deal<br />in the Software without restriction, including without limitation the rights<br />to use, copy, modify, merge, publish, distribute, sublicense, and/or sell<br />copies of the Software, and to permit persons to whom the Software is<br />furnished to do so, subject to the following conditions:</p>
+
+<p>The above copyright notice and this permission notice shall be included in<br />all copies or substantial portions of the Software.</p>
+
+<p>THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR<br />IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,<br />FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE<br />AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER<br />LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,<br />OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN<br />THE SOFTWARE.</p>
+</blockquote>
+  </div>
+</div>
+
+
+      </div>
+      <hr>
+      <footer>
+      </footer>
+
+    </div>
+
+    
+  </body>
+</html>
+

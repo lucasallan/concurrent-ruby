@@ -1,0 +1,180 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Channel</title>
+    
+    <meta name="author" content="Lucas AllanJerry DAntonio">
+
+    <!-- Enable responsive viewport -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le styles -->
+    <link href="/assets/themes/twitter/bootstrap/css/bootstrap.2.2.2.min.css" rel="stylesheet">
+    <link href="/assets/themes/twitter/css/style.css?body=1" rel="stylesheet" type="text/css" media="all">
+
+    <!-- Le fav and touch icons -->
+  <!-- Update these with your own images
+    <link rel="shortcut icon" href="images/favicon.ico">
+    <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="images/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="images/apple-touch-icon-114x114.png">
+  -->
+
+    <!-- atom & rss feed -->
+    <link href="" type="application/atom+xml" rel="alternate" title="Sitewide ATOM Feed">
+    <link href="" type="application/rss+xml" rel="alternate" title="Sitewide RSS Feed">
+
+  </head>
+
+  <body>
+    <div class="navbar">
+      <div class="navbar-inner">
+        <div class="container-narrow">
+          <a class="brand" href="/">Concurrent-ruby</a>
+          <ul class="nav">
+            
+            
+            
+
+
+  
+    
+      
+      	
+      	<li><a href="/about/index.html">About</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/documentation/index.html">Documentation</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+
+
+
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="container-narrow">
+
+      <div class="content">
+        
+<div class="page-header">
+  <h1>Channel </h1>
+</div>
+
+<div class="row-fluid">
+  <div class="span12">
+    <h1 id="change_the_dang_channel">Change the dang channel!</h1>
+
+<p><code>Channel</code> is a functional programming variation of <code>Actor</code>, based very loosely on the <a href="http://blogs.msdn.com/b/dsyme/archive/2010/02/15/async-and-parallel-design-patterns-in-f-part-3-agents.aspx">MailboxProcessor</a> agent in <a href="http://msdn.microsoft.com/en-us/library/ee370357.aspx">F#</a>. The <code>Actor</code> is used to create objects that receive messages from other threads then processes those messages based on the behavior of the class. <code>Channel</code> creates objects that receive messages and processe them using the block given at construction. <code>Channel</code> is implemented as a subclass of <a href="https://github.com/jdantonio/concurrent-ruby/blob/master/md/actor.md">Actor</a> and supports all message-passing methods of that class. <code>Channel</code> also supports pools with a shared mailbox.</p>
+
+<p>See the <a href="https://github.com/jdantonio/concurrent-ruby/blob/master/md/actor.md">Actor</a> documentation for more detail.</p>
+
+<h2 id="usage">Usage</h2>
+
+<pre class="ruby"><code class="ruby">
+require 'concurrent'
+
+channel = Concurrent::Channel.new do |msg|
+  sleep(1)
+  puts &quot;#{msg}\n&quot;
+end
+
+channel.run! =&gt; #&lt;Thread:0x007fa123d95fc8 sleep&gt;
+
+channel.post(&quot;Hello, World!&quot;) =&gt; 1
+# wait...
+=&gt; Hello, World!
+
+future = channel.post? &quot;Don't Panic.&quot; =&gt; #&lt;Concurrent::Contract:0x007fa123d6d9d8 @state=:pending...
+future.pending? =&gt; true
+# wait...
+=&gt; &quot;Don't Panic.&quot;
+future.fulfilled? =&gt; true
+
+channel.stop =&gt; true
+</code></pre>
+  </div>
+</div>
+
+
+      </div>
+      <hr>
+      <footer>
+      </footer>
+
+    </div>
+
+    
+  </body>
+</html>
+

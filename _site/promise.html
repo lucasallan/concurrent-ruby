@@ -1,0 +1,330 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Promises</title>
+    
+    <meta name="author" content="Lucas AllanJerry DAntonio">
+
+    <!-- Enable responsive viewport -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le styles -->
+    <link href="/assets/themes/twitter/bootstrap/css/bootstrap.2.2.2.min.css" rel="stylesheet">
+    <link href="/assets/themes/twitter/css/style.css?body=1" rel="stylesheet" type="text/css" media="all">
+
+    <!-- Le fav and touch icons -->
+  <!-- Update these with your own images
+    <link rel="shortcut icon" href="images/favicon.ico">
+    <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="images/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="images/apple-touch-icon-114x114.png">
+  -->
+
+    <!-- atom & rss feed -->
+    <link href="" type="application/atom+xml" rel="alternate" title="Sitewide ATOM Feed">
+    <link href="" type="application/rss+xml" rel="alternate" title="Sitewide RSS Feed">
+
+  </head>
+
+  <body>
+    <div class="navbar">
+      <div class="navbar-inner">
+        <div class="container-narrow">
+          <a class="brand" href="/">Concurrent-ruby</a>
+          <ul class="nav">
+            
+            
+            
+
+
+  
+    
+      
+      	
+      	<li><a href="/about/index.html">About</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/documentation/index.html">Documentation</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+
+
+
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="container-narrow">
+
+      <div class="content">
+        
+<div class="page-header">
+  <h1>Promises </h1>
+</div>
+
+<div class="row-fluid">
+  <div class="span12">
+    <h1 id="promises_promises">Promises, Promises</h1>
+
+<p>A promise is the most powerful and versatile of the concurrency objects in this library. Promises are inspired by the JavaScript <a href="http://wiki.commonjs.org/wiki/Promises/A">Promises/A</a> and <a href="http://promises-aplus.github.io/promises-spec/">Promises/A+</a> specifications.</p>
+
+<blockquote>
+<p>A promise represents the eventual value returned from the single completion of an operation.</p>
+</blockquote>
+
+<p>Promises are similar to futures and share many of the same behaviours. Promises are far more robust, however. Promises can be chained in a tree structure where each promise may have zero or more children. Promises are chained using the <code>then</code> method. The result of a call to <code>then</code> is always another promise. Promises are resolved asynchronously in the order they are added to the tree. Parents are guaranteed to be resolved before their children. The result of each promise is passed to each of its children upon resolution. When a promise is rejected all its children will be summarily rejected.</p>
+
+<p>Promises have three possible states: <em>pending</em>, <em>rejected</em>, and <em>fulfilled</em>. When a promise is created it is set to <em>pending</em> and will remain in that state until processing is complete. A completed promise is either <em>rejected</em>, indicating that an exception was thrown during processing, or <em>fulfilled</em>, indicating it succeeded. If a promise is <em>fulfilled</em> its <code>value</code> will be updated to reflect the result of the operation. If <em>rejected</em> the <code>reason</code> will be updated with a reference to the thrown exception. The predicate methods <code>pending?</code>, <code>rejected</code>, and <code>fulfilled?</code> can be called at any time to obtain the state of the promise, as can the <code>state</code> method, which returns a symbol.</p>
+
+<p>Retrieving the value of a promise is done through the <code>value</code> (alias: <code>deref</code>) method. Obtaining the value of a promise is a potentially blocking operation. When a promise is <em>rejected</em> a call to <code>value</code> will return <code>nil</code> immediately. When a promise is <em>fulfilled</em> a call to <code>value</code> will immediately return the current value. When a promise is <em>pending</em> a call to <code>value</code> will block until the promise is either <em>rejected</em> or <em>fulfilled</em>. A <em>timeout</em> value can be passed to <code>value</code> to limit how long the call will block. If <code>nil</code> the call will block indefinitely. If <code>0</code> the call will not block. Any other integer or float value will indicate the maximum number of seconds to block.</p>
+
+<p>Promises run on the global thread pool.</p>
+
+<h2 id="examples">Examples</h2>
+
+<p>Start by requiring promises</p>
+
+<pre class="ruby"><code class="ruby">
+require 'concurrent'
+</code></pre>
+
+<p>Then create one</p>
+
+<pre class="ruby"><code class="ruby">
+p = Promise.new(&quot;Jerry&quot;, &quot;D'Antonio&quot;) do |first, last|
+      &quot;#{last}, #{first}&quot;
+    end
+</code></pre>
+
+<p>Promises can be chained using the <code>then</code> method. The <code>then</code> method accepts a block but no arguments. The result of the each promise is passed as the block argument to chained promises</p>
+
+<pre class="ruby"><code class="ruby">
+p = Concurrent::Promise.new(10){|x| x * 2}.then{|result| result - 10 }
+</code></pre>
+
+<p>And so on, and so on, and so on</p>
+
+<pre class="ruby"><code class="ruby">
+p = Concurrent::Promise.new(10){|x| x * 2}.
+    then{|result| result - 10 }.
+    then{|result| result * 3 }.
+    then{|result| result % 5 }
+</code></pre>
+
+<p>Promises are executed asynchronously so a newly-created promise <em>should</em> always be in the pending state</p>
+
+<pre class="ruby"><code class="ruby">
+p = Concurrent::Promise.new{ &quot;Hello, world!&quot; }
+p.state   #=&gt; :pending
+p.pending? #=&gt; true
+</code></pre>
+
+<p>Wait a little bit, and the promise will resolve and provide a value</p>
+
+<pre class="ruby"><code class="ruby">
+p = Concurrent::Promise.new{ &quot;Hello, world!&quot; }
+sleep(0.1)
+
+p.state      #=&gt; :fulfilled
+p.fulfilled? #=&gt; true
+p.value      #=&gt; &quot;Hello, world!&quot;
+</code></pre>
+
+<p>If an exception occurs, the promise will be rejected and will provide a reason for the rejection</p>
+
+<pre class="ruby"><code class="ruby">
+p = Concurrent::Promise.new{ raise StandardError.new(&quot;Here comes the Boom!&quot;) }
+sleep(0.1)
+
+p.state     #=&gt; :rejected
+p.rejected? #=&gt; true
+p.reason    #=&gt; &quot;#&lt;StandardError: Here comes the Boom!&gt;&quot;
+</code></pre>
+
+<h3 id="rejection">Rejection</h3>
+
+<p>Much like the economy, rejection exhibits a trickle-down effect. When a promise is rejected all its children will be rejected</p>
+
+<pre class="ruby"><code class="ruby">
+p = [ Concurrent::Promise.new{ Thread.pass; raise StandardError } ]
+
+10.times{|i| p &lt;&lt; p.first.then{ i } }
+sleep(0.1)
+
+p.length      #=&gt; 11
+p.first.state #=&gt; :rejected
+p.last.state  #=&gt; :rejected
+</code></pre>
+
+<p>Once a promise is rejected it will not accept any children. Calls to <code>then</code> will continually return <code>self</code></p>
+
+<pre class="ruby"><code class="ruby">
+p = Concurrent::Promise.new{ raise StandardError }
+sleep(0.1)
+
+p.object_id        #=&gt; 32960556
+p.then{}.object_id #=&gt; 32960556
+p.then{}.object_id #=&gt; 32960556
+</code></pre>
+
+<h3 id="error_handling">Error Handling</h3>
+
+<p>Promises support error handling callbacks is a style mimicing Ruby’s own exception handling mechanism, namely <code>rescue</code></p>
+
+<pre class="ruby"><code class="ruby">
+Concurrent::Promise.new{ &quot;dangerous operation...&quot; }.rescue{|ex| puts &quot;Bam!&quot; }
+
+# -or- (for the Java/C# crowd)
+Concurrent::Promise.new{ &quot;dangerous operation...&quot; }.catch{|ex| puts &quot;Boom!&quot; }
+
+# -or- (for the hipsters)
+Concurrent::Promise.new{ &quot;dangerous operation...&quot; }.on_error{|ex| puts &quot;Pow!&quot; }
+</code></pre>
+
+<p>As with Ruby’s <code>rescue</code> mechanism, a promise’s <code>rescue</code> method can accept an optional Exception class argument (defaults to <code>Exception</code> when not specified)</p>
+
+<pre class="ruby"><code class="ruby">
+Concurrent::Promise.new{ &quot;dangerous operation...&quot; }.rescue(ArgumentError){|ex| puts &quot;Bam!&quot; }
+</code></pre>
+
+<p>Calls to <code>rescue</code> can also be chained</p>
+
+<pre class="ruby"><code class="ruby">
+Concurrent::Promise.new{ &quot;dangerous operation...&quot; }.
+  rescue(ArgumentError){|ex| puts &quot;Bam!&quot; }.
+  rescue(NoMethodError){|ex| puts &quot;Boom!&quot; }.
+  rescue(StandardError){|ex| puts &quot;Pow!&quot; }
+</code></pre>
+
+<p>When there are multiple <code>rescue</code> handlers the first one to match the thrown exception will be triggered</p>
+
+<pre class="ruby"><code class="ruby">
+Concurrent::Promise.new{ raise NoMethodError }.
+  rescue(ArgumentError){|ex| puts &quot;Bam!&quot; }.
+  rescue(NoMethodError){|ex| puts &quot;Boom!&quot; }.
+  rescue(StandardError){|ex| puts &quot;Pow!&quot; }
+
+sleep(0.1)
+
+#=&gt; Boom!
+</code></pre>
+
+<p>Trickle-down rejection also applies to rescue handlers. When a promise is rejected, for any reason, its rescue handlers will be triggered. Rejection of the parent counts.</p>
+
+<pre class="ruby"><code class="ruby">
+Concurrent::Promise.new{ Thread.pass; raise StandardError }.
+  then{ true }.rescue{ puts 'Boom!' }.
+  then{ true }.rescue{ puts 'Boom!' }.
+  then{ true }.rescue{ puts 'Boom!' }.
+  then{ true }.rescue{ puts 'Boom!' }.
+  then{ true }.rescue{ puts 'Boom!' }
+sleep(0.1)
+
+#=&gt; Boom!
+#=&gt; Boom!
+#=&gt; Boom!
+#=&gt; Boom!
+#=&gt; Boom!
+</code></pre>
+
+<h2 id="copyright">Copyright</h2>
+
+<p><em>Concurrent Ruby</em> is Copyright © 2013 <a href="https://twitter.com/jerrydantonio">Jerry D’Antonio</a>. It is free software and may be redistributed under the terms specified in the LICENSE file.</p>
+
+<h2 id="license">License</h2>
+
+<p>Released under the MIT license.</p>
+
+<p>http://www.opensource.org/licenses/mit-license.php</p>
+
+<blockquote>
+<p>Permission is hereby granted, free of charge, to any person obtaining a copy<br />of this software and associated documentation files (the “Software”), to deal<br />in the Software without restriction, including without limitation the rights<br />to use, copy, modify, merge, publish, distribute, sublicense, and/or sell<br />copies of the Software, and to permit persons to whom the Software is<br />furnished to do so, subject to the following conditions:</p>
+
+<p>The above copyright notice and this permission notice shall be included in<br />all copies or substantial portions of the Software.</p>
+
+<p>THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR<br />IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,<br />FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE<br />AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER<br />LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,<br />OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN<br />THE SOFTWARE.</p>
+</blockquote>
+  </div>
+</div>
+
+
+      </div>
+      <hr>
+      <footer>
+      </footer>
+
+    </div>
+
+    
+  </body>
+</html>
+

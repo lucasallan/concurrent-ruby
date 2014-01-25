@@ -1,0 +1,301 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>TimerTask</title>
+    
+    <meta name="author" content="Lucas AllanJerry DAntonio">
+
+    <!-- Enable responsive viewport -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+    <!--[if lt IE 9]>
+      <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+    <![endif]-->
+
+    <!-- Le styles -->
+    <link href="/assets/themes/twitter/bootstrap/css/bootstrap.2.2.2.min.css" rel="stylesheet">
+    <link href="/assets/themes/twitter/css/style.css?body=1" rel="stylesheet" type="text/css" media="all">
+
+    <!-- Le fav and touch icons -->
+  <!-- Update these with your own images
+    <link rel="shortcut icon" href="images/favicon.ico">
+    <link rel="apple-touch-icon" href="images/apple-touch-icon.png">
+    <link rel="apple-touch-icon" sizes="72x72" href="images/apple-touch-icon-72x72.png">
+    <link rel="apple-touch-icon" sizes="114x114" href="images/apple-touch-icon-114x114.png">
+  -->
+
+    <!-- atom & rss feed -->
+    <link href="" type="application/atom+xml" rel="alternate" title="Sitewide ATOM Feed">
+    <link href="" type="application/rss+xml" rel="alternate" title="Sitewide RSS Feed">
+
+  </head>
+
+  <body>
+    <div class="navbar">
+      <div class="navbar-inner">
+        <div class="container-narrow">
+          <a class="brand" href="/">Concurrent-ruby</a>
+          <ul class="nav">
+            
+            
+            
+
+
+  
+    
+      
+      	
+      	<li><a href="/about/index.html">About</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+      	
+      	<li><a href="/documentation/index.html">Documentation</a></li>
+      	
+      
+    
+  
+    
+      
+    
+  
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+    
+      
+    
+  
+
+
+
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="container-narrow">
+
+      <div class="content">
+        
+<div class="page-header">
+  <h1>TimerTask </h1>
+</div>
+
+<div class="row-fluid">
+  <div class="span12">
+    <h1 id="to_gobblers_knob_its_groundhog_day">To Gobbler’s Knob. It’s Groundhog Day!</h1>
+
+<p>A very common currency pattern is to run a thread that performs a task at regular intervals. The thread that peforms the task sleeps for the given interval then wakes up and performs the task. Lather, rinse, repeat… This pattern causes two problems. First, it is difficult to test the business logic of the task becuse the task itself is tightly coupled with the concurrency logic. Second, an exception in raised while performing the task can cause the entire thread to abend. In a long-running application where the task thread is intended to run for days/weeks/years a crashed task thread can pose a significant problem. <code>TimerTask</code> alleviates both problems.</p>
+
+<p>When a <code>TimerTask</code> is launched it starts a thread for monitoring the execution interval. The <code>TimerTask</code> thread does not perform the task, however. Instead, the TimerTask launches the task on a separate thread. Should the task experience an unrecoverable crash only the task thread will crash. This makes the <code>TimerTask</code> very fault tolerant Additionally, the <code>TimerTask</code> thread can respond to the success or failure of the task, performing logging or ancillary operations. <code>TimerTask</code> can also be configured with a timeout value allowing it to kill a task that runs too long.</p>
+
+<p>One other advantage of <code>TimerTask</code> is it forces the bsiness logic to be completely decoupled from the concurrency logic. The business logic can be tested separately then passed to the <code>TimerTask</code> for scheduling and running.</p>
+
+<p>Unlike other abstraction in this library, <code>TimerTask</code> does not run on the global thread pool. In my experience the types of tasks that will benefit from <code>TimerTask</code> tend to also be long running. For this reason they get their own thread every time the task is executed.</p>
+
+<p>This class is based on the Java class <a href="http://docs.oracle.com/javase/7/docs/api/java/util/TimerTask.html">of the same name</a>.</p>
+
+<h2 id="observation">Observation</h2>
+
+<p><code>TimerTask</code> supports notification through the Ruby standard library <a href="http://ruby-doc.org/stdlib-2.0/libdoc/observer/rdoc/Observable.html">Observable</a> module. On execution the <code>TimerTask</code> will notify the observers with thress arguments: time of execution, the result of the block (or nil on failure), and any raised exceptions (or nil on success). If the timeout interval is exceeded the observer will receive a <code>Concurrent::TimeoutError</code> object as the third argument.</p>
+
+<h2 id="examples">Examples</h2>
+
+<p>A basic example:</p>
+
+<pre class="ruby"><code class="ruby">
+require 'concurrent'
+
+task = Concurrent::TimerTask.new{ puts 'Boom!' }
+task.run!
+
+task.execution_interval #=&gt; 60 (default)
+task.timeout_interval   #=&gt; 30 (default)
+
+# wait 60 seconds...
+#=&gt; 'Boom!'
+
+task.stop #=&gt; true
+</code></pre>
+
+<p>Both the execution_interval and the timeout_interval can be configured:</p>
+
+<pre class="ruby"><code class="ruby">
+task = Concurrent::TimerTask.new(execution_interval: 5, timeout_interval: 5) do
+       puts 'Boom!'
+     end
+
+task.execution_interval #=&gt; 5
+task.timeout_interval   #=&gt; 5
+</code></pre>
+
+<p>By default an <code>TimerTask</code> will wait for <code>:execution_interval</code> seconds before running the block. To run the block immediately set the <code>:run_now</code> option to <code>true</code>:</p>
+
+<pre class="ruby"><code class="ruby">
+task = Concurrent::TimerTask.new(run_now: true){ puts 'Boom!' }
+task.run!
+
+#=&gt; 'Boom!'
+</code></pre>
+
+<p>The <code>TimerTask</code> class includes the <code>Dereferenceable</code> mixin module so the result of the last execution is always available via the <code>#value</code> method. Derefencing options can be passed to the <code>TimerTask</code> during construction or at any later time using the <code>#set_deref_options</code> method.</p>
+
+<pre class="ruby"><code class="ruby">
+task = Concurrent::TimerTask.new(
+  dup_on_deref: true,
+  execution_interval: 5
+){ Time.now }
+
+task.run!
+Time.now   #=&gt; 2013-11-07 18:06:50 -0500
+sleep(10)
+task.value #=&gt; 2013-11-07 18:06:55 -0500
+</code></pre>
+
+<p>A simple example with observation:</p>
+
+<pre class="ruby"><code class="ruby">
+class TaskObserver
+  def update(time, result, ex)
+    if result
+      print &quot;(#{time}) Execution successfully returned #{result}\n&quot;
+    elsif ex.is_a?(Concurrent::TimeoutError)
+      print &quot;(#{time}) Execution timed out\n&quot;
+    else
+      print &quot;(#{time}) Execution failed with error #{ex}\n&quot;
+    end
+  end
+end
+
+task = Concurrent::TimerTask.new(execution_interval: 1, timeout_interval: 1){ 42 }
+task.add_observer(TaskObserver.new)
+task.run!
+
+#=&gt; (2013-10-13 19:08:58 -0400) Execution successfully returned 42
+#=&gt; (2013-10-13 19:08:59 -0400) Execution successfully returned 42
+#=&gt; (2013-10-13 19:09:00 -0400) Execution successfully returned 42
+task.stop
+
+task = Concurrent::TimerTask.new(execution_interval: 1, timeout_interval: 1){ sleep }
+task.add_observer(TaskObserver.new)
+task.run!
+
+#=&gt; (2013-10-13 19:07:25 -0400) Execution timed out
+#=&gt; (2013-10-13 19:07:27 -0400) Execution timed out
+#=&gt; (2013-10-13 19:07:29 -0400) Execution timed out
+task.stop
+
+task = Concurrent::TimerTask.new(execution_interval: 1){ raise StandardError }
+task.add_observer(TaskObserver.new)
+task.run!
+
+#=&gt; (2013-10-13 19:09:37 -0400) Execution failed with error StandardError
+#=&gt; (2013-10-13 19:09:38 -0400) Execution failed with error StandardError
+#=&gt; (2013-10-13 19:09:39 -0400) Execution failed with error StandardError
+task.stop
+</code></pre>
+
+<p>In some cases it may be necessary for a <code>TimerTask</code> to affect its own execution cycle. To facilitate this a reference to the task object is passed into the block as a block argument every time the task is executed.</p>
+
+<pre class="ruby"><code class="ruby">
+timer_task = Concurrent::TimerTask.new(execution_interval: 1) do |task|
+  task.execution_interval.times{ print 'Boom! ' }
+  print &quot;\n&quot;
+  task.execution_interval += 1
+  if task.execution_interval &gt; 5
+    puts 'Stopping...'
+    task.stop
+  end
+end
+
+timer_task.run # blocking call - this task will stop itself
+#=&gt; Boom!
+#=&gt; Boom! Boom!
+#=&gt; Boom! Boom! Boom!
+#=&gt; Boom! Boom! Boom! Boom!
+#=&gt; Boom! Boom! Boom! Boom! Boom!
+#=&gt; Stopping...
+</code></pre>
+
+<h2 id="copyright">Copyright</h2>
+
+<p><em>Concurrent Ruby</em> is Copyright © 2013 <a href="https://twitter.com/jerrydantonio">Jerry D’Antonio</a>. It is free software and may be redistributed under the terms specified in the LICENSE file.</p>
+
+<h2 id="license">License</h2>
+
+<p>Released under the MIT license.</p>
+
+<p>http://www.opensource.org/licenses/mit-license.php</p>
+
+<blockquote>
+<p>Permission is hereby granted, free of charge, to any person obtaining a copy<br />of this software and associated documentation files (the “Software”), to deal<br />in the Software without restriction, including without limitation the rights<br />to use, copy, modify, merge, publish, distribute, sublicense, and/or sell<br />copies of the Software, and to permit persons to whom the Software is<br />furnished to do so, subject to the following conditions:</p>
+
+<p>The above copyright notice and this permission notice shall be included in<br />all copies or substantial portions of the Software.</p>
+
+<p>THE SOFTWARE IS PROVIDED “AS IS”, WITHOUT WARRANTY OF ANY KIND, EXPRESS OR<br />IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,<br />FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE<br />AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER<br />LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,<br />OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN<br />THE SOFTWARE.</p>
+</blockquote>
+  </div>
+</div>
+
+
+      </div>
+      <hr>
+      <footer>
+      </footer>
+
+    </div>
+
+    
+  </body>
+</html>
+
